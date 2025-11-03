@@ -1,68 +1,31 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/reference/configuration-reference
+version: 2.1
+
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/guides/orchestrate/jobs-steps/#jobs-overview & https://circleci.com/docs/reference/configuration-reference/#jobs
 jobs:
-  build-branches:
-    environment:
-      Harbor_Git_Tag: 'v2.13.0'
-    machine: true
-    resource_class: arm.medium
+  say-hello:
+    # Specify the execution environment. You can specify an image from Docker Hub or use one of our convenience images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/guides/execution-managed/executor-intro/ & https://circleci.com/docs/reference/configuration-reference/#executor-job
+    docker:
+      # Specify the version you desire here
+      # See: https://circleci.com/developer/images/image/cimg/base
+      - image: cimg/base:current
+
+    # Add steps to the job
+    # See: https://circleci.com/docs/guides/orchestrate/jobs-steps/#steps-overview & https://circleci.com/docs/reference/configuration-reference/#steps
     steps:
+      # Checkout the code as the first step.
       - checkout
       - run:
-          name: Build a container image
-          command: |
-            bash build-harbor-aarch64.sh
-            docker images
-            mkdir all-in-one/harbor
-            docker save $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^goharbor/"| grep "\-aarch64") | gzip > all-in-one/harbor/harbor.${Harbor_Git_Tag}.tar.gz
-            curl -L https://raw.githubusercontent.com/vmware/harbor/${Harbor_Git_Tag}/LICENSE -o all-in-one/harbor/LICENSE
-            curl -L https://raw.githubusercontent.com/vmware/harbor/${Harbor_Git_Tag}/make/common.sh -o all-in-one/harbor/common.sh
-            curl -L https://raw.githubusercontent.com/vmware/harbor/${Harbor_Git_Tag}/make/harbor.yml.tmpl -o all-in-one/harbor/harbor.yml.tmpl
-            curl -L https://raw.githubusercontent.com/vmware/harbor/${Harbor_Git_Tag}/make/install.sh -o all-in-one/harbor/install.sh
-            curl -L https://raw.githubusercontent.com/vmware/harbor/${Harbor_Git_Tag}/make/prepare -o all-in-one/harbor/prepare
-            sed -i "s#goharbor/prepare:dev#goharbor/prepare:${Harbor_Git_Tag}-aarch64#g" all-in-one/harbor/prepare
-            cd all-in-one
-            chmod +x harbor/prepare harbor/install.sh
-            tar zcf harbor-offline-installer-aarch64.tgz harbor
-            rm -rf harbor
-            docker build -t alanpeng/harbor_images_aarch64:$Harbor_Git_Tag .
-            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-            docker push alanpeng/harbor_images_aarch64:$Harbor_Git_Tag
-  build-tags:
-    environment:
-      Harbor_Git_Tag: 'v2.13.0'
-    machine: true
-    resource_class: arm.medium
-    steps:
-      - checkout
-      - run:
-          name: Build a container image
-          command: |
-            bash build-harbor-aarch64.sh
-            docker images
-            mkdir all-in-one/harbor
-            docker save $(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^goharbor/"| grep "\-aarch64") | gzip > all-in-one/harbor/harbor.${Harbor_Git_Tag}.tar.gz
-            curl -L https://raw.githubusercontent.com/vmware/harbor/${Harbor_Git_Tag}/LICENSE -o all-in-one/harbor/LICENSE
-            curl -L https://raw.githubusercontent.com/vmware/harbor/${Harbor_Git_Tag}/make/common.sh -o all-in-one/harbor/common.sh
-            curl -L https://raw.githubusercontent.com/vmware/harbor/${Harbor_Git_Tag}/make/harbor.yml.tmpl -o all-in-one/harbor/harbor.yml.tmpl
-            curl -L https://raw.githubusercontent.com/vmware/harbor/${Harbor_Git_Tag}/make/install.sh -o all-in-one/harbor/install.sh
-            curl -L https://raw.githubusercontent.com/vmware/harbor/${Harbor_Git_Tag}/make/prepare -o all-in-one/harbor/prepare
-            sed -i "s#goharbor/prepare:dev#goharbor/prepare:${Harbor_Git_Tag}-aarch64#g" all-in-one/harbor/prepare
-            cd all-in-one
-            chmod +x harbor/prepare harbor/install.sh
-            tar zcf harbor-offline-installer-aarch64.tgz harbor
-            rm -rf harbor
-            docker build -t alanpeng/harbor_images_aarch64:$Harbor_Git_Tag .
-            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-            docker push alanpeng/harbor_images_aarch64:$Harbor_Git_Tag
+          name: "Say hello"
+          command: "echo Hello, World!"
+
+# Orchestrate jobs using workflows
+# See: https://circleci.com/docs/guides/orchestrate/workflows/ & https://circleci.com/docs/reference/configuration-reference/#workflows
 workflows:
-  version: 2
-  build-for-branches:
+  say-hello-workflow: # This is the name of the workflow, feel free to change it to better match your workflow.
+    # Inside the workflow, you define the jobs you want to run.
     jobs:
-      - build-branches
-  build-for-tags:
-    jobs:
-      - build-tags:
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
+      - say-hello
